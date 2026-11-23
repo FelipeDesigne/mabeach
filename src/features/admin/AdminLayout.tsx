@@ -25,7 +25,7 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-dvh lg:flex">
-      <aside className="no-print border-b border-line bg-white lg:sticky lg:top-0 lg:h-dvh lg:w-64 lg:shrink-0 lg:border-r lg:border-b-0">
+      <aside className="no-print border-b border-line bg-white lg:sticky lg:top-0 lg:h-dvh lg:w-64 lg:shrink-0 lg:overflow-y-auto lg:overscroll-contain lg:border-r lg:border-b-0">
         <div className="flex items-center justify-between gap-3 px-4 py-3 lg:flex-col lg:items-start lg:py-6">
           <img src="/logo.svg" alt="MA Beach" className="h-10 w-auto lg:h-auto lg:w-36" width={2782} height={1908} />
           <div className="text-right lg:text-left">
@@ -33,7 +33,7 @@ export function AdminLayout() {
             <p className="text-xs text-muted">{role ? ROLE_LABEL[role] : ''}</p>
           </div>
         </div>
-        <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:overflow-visible lg:pb-0">
+        <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:overflow-visible lg:pb-6">
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} className={item}>
               <l.icon className="size-4" aria-hidden />
