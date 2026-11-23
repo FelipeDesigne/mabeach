@@ -1,0 +1,230 @@
+rules_version = '2';
+
+// Tudo é negado por padrão; cada coleção é liberada explicitamente.
+// Funções da equipe (claim `role`, gravada só pelo servidor): admin (ADM), manager (Gerente), waiter (Garçom), counter (Balcão), kitchen (Cozinha).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    // Quando a função de alguém muda ou a conta é desativada, o servidor grava o momento em
+    // `sessionRevocations/{uid}`: a sessão aberta antes disso perde a permissão na hora.
+    function sessionCurrent() {
+      let revoked = /databases/$(database)/documents/sessionRevocations/$(request.auth.uid);
+      return !exists(revoked) || request.auth.token.iat >= get(revoked).data.at;
+    }
+    function role() { return request.auth.token.get('role', ''); }
+    function isAdmin() { return signedIn() && role() == 'admin' && sessionCurrent(); }
+    // Gerente: cuida do cardápio e das mesas e vê o histórico. Não mexe em usuários nem configurações.
+    function isManager() { return signedIn() && role() in ['admin', 'manager'] && sessionCurrent(); }
+    // Quem atende chamados (liga "Em serviço", recebe avisos, marca "Atendido").
+    function isStaff() { return signedIn() && role() in ['admin', 'manager', 'waiter'] && sessionCurrent(); }
+    // Balcão: vê o mapa ao vivo e encerra mesas (pelo servidor). Não atende chamados.
+    function isCounter() { return signedIn() && role() == 'counter' && sessionCurrent(); }
+    // Cozinha: recebe os pedidos e marca "Pronto" (pelo servidor). Não atende mesas.
+    function isKitchen() { return signedIn() && role() == 'kitchen' && sessionCurrent(); }
+    function isTeam() { return isStaff() || isCounter() || isKitchen(); }
+    function num(v, min, max) { return (v is int || v is float) && v >= min && v <= max; }
+    function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
+
+    function str(v, min, max) { return v is string && v.size() >= min && v.size() <= max; }
+    function int(v, min, max) { return v is int && v >= min && v <= max; }
+    function optStr(d, k, max) { return !(k in d) || d[k] == null || str(d[k], 0, max); }
+    // Quem salvou por último fica registrado em cada alteração do painel.
+    function stamped(d) { return d.updatedBy == request.auth.uid && d.updatedAt == request.time; }
+    function httpsUrl(v) { return v == '' || (str(v, 9, 500) && v.matches('^https://[^\\s]+$')); }
+
+    // ---------- Configurações ----------
+    // Lidas pelo cardápio (prazo entre chamadas, link de avaliação).
+    match /settings/public {
+      allow read: if true;
+      allow write: if isAdmin() && validPublic(request.resource.data);
+
+      function validPublic(d) {
+        return d.keys().hasOnly(['callCooldownMin', 'googleReviewUrl', 'instagramUrl', 'askReviewAfterCall', 'updatedAt', 'updatedBy'])
+          && int(d.callCooldownMin, 1, 60)
+          && (!('askReviewAfterCall' in d) || d.askReviewAfterCall is bool)
+          && (!('googleReviewUrl' in d) || httpsUrl(d.googleReviewUrl))
+          && (!('instagramUrl' in d) || httpsUrl(d.instagramUrl))
+          && stamped(d);
+      }
+    }
+    // Arte de destaque no topo do cardápio (16:9). Gerência troca; o público lê.
+    match /settings/banner {
+      allow read: if true;
+      allow write: if isManager() && validBanner(request.resource.data);
+
+      function validBanner(d) {
+        return d.keys().hasOnly(['imageUrl', 'imagePath', 'visible', 'updatedAt', 'updatedBy'])
+          && d.visible is bool
+          && (d.imagePath == null || (str(d.imagePath, 1, 200) && d.imagePath.matches('^banner/[A-Za-z0-9._-]+$')))
+          && (d.imageUrl == null || (str(d.imageUrl, 1, 1000) && d.imageUrl.matches('^(https://(firebasestorage[.]googleapis[.]com|storage[.]googleapis[.]com)|http://(127[.]0[.]0[.]1|localhost):9199)/.+$')))
+          && stamped(d);
+      }
+    }
+    // Como os chamados são distribuídos (lidas pela equipe, aplicadas pelo servidor).
+    match /settings/ops {
+      allow read: if isStaff();
+      allow write: if isAdmin() && validOps(request.resource.data);
+
+      function validOps(d) {
+        return d.keys().hasOnly(['routing', 'escalateAfterMin', 'ownerAfterMin', 'qrBaseUrl', 'autoOffDutyHour', 'updatedAt', 'updatedBy'])
+          && d.routing in ['round_robin', 'all']
+          && (!('autoOffDutyHour' in d) || int(d.autoOffDutyHour, -1, 23))
+          && int(d.escalateAfterMin, 0, 60)
+          && int(d.ownerAfterMin, 0, 120)
+          && (d.qrBaseUrl == '' || (str(d.qrBaseUrl, 9, 200) && d.qrBaseUrl.matches('^https://[A-Za-z0-9.-]+(:[0-9]+)?$')))
+          && stamped(d);
+      }
+    }
+
+    // ---------- Cardápio ----------
+    // O público só lê o que está visível (a consulta do app precisa filtrar `visible == true`).
+    match /categories/{id} {
+      allow read: if resource.data.visible == true || isManager();
+      allow delete: if isManager();
+      allow create, update: if isManager() && validCategory(request.resource.data);
+
+      function validCategory(d) {
+        return d.keys().hasOnly(['name', 'order', 'visible', 'updatedAt', 'updatedBy'])
+          && str(d.name, 1, 60) && int(d.order, 0, 100000) && d.visible is bool && stamped(d);
+      }
+    }
+    match /items/{id} {
+      allow read: if resource.data.visible == true || isManager();
+      allow delete: if isManager();
+      allow create, update: if isManager() && validItem(request.resource.data);
+
+      function validItem(d) {
+        return d.keys().hasOnly(['categoryId', 'name', 'description', 'price', 'photoPath', 'photoUrl',
+                                 'available', 'visible', 'order', 'featured', 'promoPrice', 'updatedAt', 'updatedBy'])
+          && str(d.categoryId, 1, 40) && str(d.name, 1, 80) && str(d.description, 0, 300)
+          && int(d.price, 0, 10000000)
+          // Destaque (aparece embaixo da arte) e preço de promoção, sempre menor que o preço normal.
+          && (!('featured' in d) || d.featured is bool)
+          && (!('promoPrice' in d) || d.promoPrice == null || int(d.promoPrice, 0, d.price - 1))
+          && (d.photoPath == null || (str(d.photoPath, 1, 300) && d.photoPath.matches('^menu/' + id + '/[A-Za-z0-9._-]+$')))
+          && (d.photoUrl == null || (str(d.photoUrl, 1, 1000) && d.photoUrl.matches('^(https://(firebasestorage[.]googleapis[.]com|storage[.]googleapis[.]com)|http://(127[.]0[.]0[.]1|localhost):9199)/.+$')))
+          && d.available is bool && d.visible is bool && int(d.order, 0, 100000)
+          && stamped(d);
+      }
+    }
+
+    // ---------- Mesas ----------
+    // O código da mesa (id do documento, aleatório) vai no QR: o cliente abre só a mesa do QR, sem listar as outras.
+    match /tables/{id} {
+      // A equipe lista as mesas (o garçom escolhe a mesa do pedido; o balcão vê o mapa).
+      allow get: if (resource.data.active == true) || isTeam();
+      allow list: if isTeam();
+      allow delete: if isManager();
+      allow create, update: if isManager() && validTable(request.resource.data);
+
+      // Ambiente e posição no mapa (x, y) são opcionais: mesa sem ambiente ou fora do mapa continua funcionando.
+      function validTable(d) {
+        return d.keys().hasOnly(['label', 'number', 'active', 'areaId', 'x', 'y', 'shape', 'updatedAt', 'updatedBy'])
+          && str(d.label, 1, 20) && int(d.number, 0, 100000) && d.active is bool
+          && (!('areaId' in d) || d.areaId == null || str(d.areaId, 1, 40))
+          && (!('x' in d) || d.x == null || num(d.x, 0, 2000))
+          && (!('y' in d) || d.y == null || num(d.y, 0, 2000))
+          && (!('shape' in d) || d.shape in ['round', 'square'])
+          && stamped(d);
+      }
+    }
+
+    // ---------- Ambientes e mapa ----------
+    // Salão, Varanda, Quadras... com as paredes desenhadas. Gerência edita; a equipe e o balcão leem.
+    match /areas/{id} {
+      allow read: if isTeam();
+      allow delete: if isManager();
+      allow create, update: if isManager() && validArea(request.resource.data);
+
+      function validArea(d) {
+        return d.keys().hasOnly(['name', 'order', 'walls', 'floor', 'updatedAt', 'updatedBy'])
+          && str(d.name, 1, 40) && int(d.order, 0, 100000)
+          && (!('floor' in d) || d.floor in ['deck', 'madeira', 'cimento', 'porcelanato', 'areia', 'grama'])
+          && (!('walls' in d) || (d.walls is list && d.walls.size() <= 500))
+          && stamped(d);
+      }
+    }
+
+    // Situação de cada mesa (chamando / com garçom / livre) para o mapa do balcão. Só o servidor escreve.
+    match /tableStatus/{id} {
+      allow read: if isTeam();
+      allow write: if false;
+    }
+
+    // ---------- Chamados ----------
+    // Criados e atendidos só pelo servidor (Cloud Functions). A equipe acompanha em tempo real.
+    match /calls/{id} {
+      allow read: if isStaff();
+      allow write: if false;
+    }
+
+    // ---------- Pedidos (comanda) ----------
+    // Criados e atualizados só pelo servidor (preço vem do cardápio). Equipe, balcão e cozinha acompanham.
+    match /orders/{id} {
+      allow read: if isTeam();
+      allow write: if false;
+    }
+
+    // ---------- Equipe ----------
+    // Cadastro feito só pelo servidor. A pessoa só liga e desliga "Em serviço".
+    match /staff/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      allow update: if isSelf(uid) && isStaff()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['onDuty', 'onDutyAt'])
+        && request.resource.data.onDuty is bool
+        && request.resource.data.onDutyAt == request.time;
+      // Pausa: sai do rodízio por até 30 minutos e volta sozinho (ou encerra antes).
+      allow update: if isSelf(uid) && isStaff()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pausedUntil'])
+        && (request.resource.data.pausedUntil == null
+            || (request.resource.data.pausedUntil is timestamp
+                && request.resource.data.pausedUntil > request.time
+                && request.resource.data.pausedUntil <= request.time + duration.value(31, 'm')));
+      // Depois de trocar a senha criada pelo ADM, a pessoa só pode desligar o aviso de troca (nunca religar ou mexer em outra coisa).
+      allow update: if isSelf(uid) && isTeam()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChangePassword'])
+        && request.resource.data.mustChangePassword == false;
+      // Foto que o cliente vê ao chamar: só o ADM coloca e troca.
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['photoUrl', 'photoPath', 'updatedAt', 'updatedBy'])
+        && (request.resource.data.photoPath == null
+            || (str(request.resource.data.photoPath, 1, 300) && request.resource.data.photoPath.matches('^staff/' + uid + '/[A-Za-z0-9._-]+$')))
+        && (request.resource.data.photoUrl == null
+            || (str(request.resource.data.photoUrl, 1, 1000) && request.resource.data.photoUrl.matches('^(https://(firebasestorage[.]googleapis[.]com|storage[.]googleapis[.]com)|http://(127[.]0[.]0[.]1|localhost):9199)/.+$')))
+        && stamped(request.resource.data);
+      // Ambientes em que a pessoa trabalha (vazio = todos): só o ADM define.
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['areas', 'updatedAt', 'updatedBy'])
+        && request.resource.data.areas is list && request.resource.data.areas.size() <= 20
+        && stamped(request.resource.data);
+      allow create, delete: if false;
+
+      // Aparelhos que recebem os avisos de chamado.
+      match /devices/{deviceId} {
+        allow read, delete: if isSelf(uid);
+        allow create, update: if isSelf(uid) && isStaff()
+          && request.resource.data.keys().hasOnly(['token', 'platform', 'updatedAt'])
+          && str(request.resource.data.token, 20, 4096)
+          && request.resource.data.platform in ['android', 'ios', 'computador']
+          && request.resource.data.updatedAt == request.time;
+      }
+    }
+
+    // ---------- Painel (relatórios) ----------
+    // Visitas de mesa (atendida até ser encerrada) e contadores anônimos do dia. Só o servidor escreve.
+    match /sessions/{id} {
+      allow read: if isManager();
+      allow write: if false;
+    }
+    match /stats/{day} {
+      allow read: if isManager();
+      allow write: if false;
+    }
+
+    // Controle interno do servidor (limites, rodízio, auditoria): o app não lê nem escreve.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

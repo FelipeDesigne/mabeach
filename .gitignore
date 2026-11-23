@@ -1,0 +1,32 @@
+node_modules
+dist
+dev-dist
+*.local
+*.tsbuildinfo
+
+# Credenciais e configuração local (nunca versionar)
+.env*
+!.env.example
+credenciasi do firebase.txt
+credenciais*
+*serviceAccount*.json
+*-firebase-adminsdk-*.json
+*.pem
+*.key
+*.p12
+*.secret.local
+
+# Configuração local do Claude Code (tem caminhos do computador)
+.claude/
+
+# Firebase
+.firebase/
+*-debug.log
+firebase-debug.*.log
+functions/lib/
+
+# Dados locais dos emuladores
+.emulator-data/
+firestore-debug.log
+ui-debug.log
+.emulator-tmp/

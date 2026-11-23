@@ -1,0 +1,44 @@
+rules_version = '2';
+
+// Fotos do cardápio, arte de destaque e fotos da equipe. Todo o resto é negado.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function canEditMenu() {
+      return request.auth != null && request.auth.token.get('role', '') in ['admin', 'manager'];
+    }
+
+    // menu/{itemId}/{arquivo}: leitura pública (botão "Ver foto real"), escrita só ADM e Gerente.
+    match /menu/{itemId}/{file} {
+      allow read: if true;
+      allow create, update: if canEditMenu()
+        && file.matches('^[A-Za-z0-9._-]{1,80}$')
+        && request.resource.size < 3 * 1024 * 1024
+        && request.resource.contentType.matches('image/(webp|jpeg|png)');
+      allow delete: if canEditMenu();
+    }
+
+    // banner/{arquivo}: arte de destaque do topo do cardápio. Leitura pública, escrita só ADM e Gerente.
+    match /banner/{file} {
+      allow read: if true;
+      allow create, update: if canEditMenu()
+        && file.matches('^[A-Za-z0-9._-]{1,80}$')
+        && request.resource.size < 3 * 1024 * 1024
+        && request.resource.contentType.matches('image/(webp|jpeg|png)');
+      allow delete: if canEditMenu();
+    }
+
+    // staff/{uid}/{arquivo}: foto do garçom que o cliente vê ao chamar. Leitura pública, escrita só ADM.
+    match /staff/{uid}/{file} {
+      allow read: if true;
+      allow create, update: if request.auth != null && request.auth.token.get('role', '') == 'admin'
+        && file.matches('^[A-Za-z0-9._-]{1,80}$')
+        && request.resource.size < 3 * 1024 * 1024
+        && request.resource.contentType.matches('image/(webp|jpeg|png)');
+      allow delete: if request.auth != null && request.auth.token.get('role', '') == 'admin';
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
