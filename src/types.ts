@@ -44,8 +44,14 @@ export type Table = {
   shape?: 'round' | 'square'
 }
 
+/**
+ * Porta ou janela numa parede. `t` é o centro dela ao longo da parede (0 = ponta 1, 1 = ponta 2) e `w` a largura,
+ * nas unidades do mapa: assim ela acompanha a parede quando a ponta é arrastada.
+ * `flip` (0 a 3, só porta): para que lado abre e de que ponta fica a dobradiça.
+ */
+export type Opening = { kind: 'door' | 'window'; t: number; w: number; flip?: number }
 /** Parede desenhada no mapa (coordenadas do mapa, 1000 x 600). */
-export type Wall = { x1: number; y1: number; x2: number; y2: number }
+export type Wall = { x1: number; y1: number; x2: number; y2: number; openings?: Opening[] }
 export type FloorId = 'deck' | 'madeira' | 'cimento' | 'porcelanato' | 'areia' | 'grama'
 /** Pisos do mapa (texturas em public/img/pisos). */
 export const FLOORS: { id: FloorId; label: string }[] = [
@@ -56,7 +62,10 @@ export const FLOORS: { id: FloorId; label: string }[] = [
   { id: 'areia', label: 'Areia' },
   { id: 'grama', label: 'Grama' },
 ]
-export type Area = { id: string; name: string; order: number; walls?: Wall[]; floor?: FloorId }
+/** Piso pintado com o balde: o ponto onde a pessoa tocou e o piso. Ele preenche o espaço fechado pelas paredes em volta do ponto. */
+export type Fill = { x: number; y: number; floor: FloorId }
+/** `floor` é o formato antigo (piso no mapa todo); vale só enquanto o ambiente não tem nada pintado em `fills`. */
+export type Area = { id: string; name: string; order: number; walls?: Wall[]; fills?: Fill[]; floor?: FloorId }
 
 /** Situação da mesa para o mapa do balcão (escrita só pelo servidor). */
 export type TableStatus = {

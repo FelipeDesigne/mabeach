@@ -129,17 +129,19 @@ service cloud.firestore {
     }
 
     // ---------- Ambientes e mapa ----------
-    // Salão, Varanda, Quadras... com as paredes desenhadas. Gerência edita; a equipe e o balcão leem.
+    // Salão, Varanda, Quadras... com as paredes (portas e janelas ficam dentro de cada parede) e os pisos pintados.
+    // Gerência edita; a equipe e o balcão leem.
     match /areas/{id} {
       allow read: if isTeam();
       allow delete: if isManager();
       allow create, update: if isManager() && validArea(request.resource.data);
 
       function validArea(d) {
-        return d.keys().hasOnly(['name', 'order', 'walls', 'floor', 'updatedAt', 'updatedBy'])
+        return d.keys().hasOnly(['name', 'order', 'walls', 'fills', 'floor', 'updatedAt', 'updatedBy'])
           && str(d.name, 1, 40) && int(d.order, 0, 100000)
           && (!('floor' in d) || d.floor in ['deck', 'madeira', 'cimento', 'porcelanato', 'areia', 'grama'])
           && (!('walls' in d) || (d.walls is list && d.walls.size() <= 500))
+          && (!('fills' in d) || (d.fills is list && d.fills.size() <= 60))
           && stamped(d);
       }
     }

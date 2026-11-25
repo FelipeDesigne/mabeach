@@ -9,6 +9,7 @@ import { Button, Modal, Notice, Spinner } from '../../components/ui'
 import { canManage, useAuth } from '../auth/AuthProvider'
 import { UpdateBanner } from '../pwa/UpdateBanner'
 import { FloorMap, TONE, type MapTable } from '../map/FloorMap'
+import { contentView, viewBoxOf } from '../map/view'
 import type { Area, Table, TableStatus } from '../../types'
 
 const byOrder = (a: Area, b: Area) => a.order - b.order || a.name.localeCompare(b.name, 'pt-BR')
@@ -157,7 +158,7 @@ export function CounterPage() {
                   </button>
                 ))}
               </div>
-              {area && <FloorMap walls={area.walls ?? []} floor={area.floor} tables={mapTables} onTableClick={(id) => statusOf.get(id)?.status !== 'free' && setSelected(id)} className="ring-1 ring-line" />}
+              {area && <FloorMap walls={area.walls ?? []} fills={area.fills} floor={area.floor} tables={mapTables} viewBox={viewBoxOf(contentView(area.walls ?? [], mapTables))} onTableClick={(id) => statusOf.get(id)?.status !== 'free' && setSelected(id)} className="ring-1 ring-line" />}
               <p className="flex flex-wrap gap-4 text-xs text-muted">
                 {(['calling', 'busy', 'free'] as const).map((k) => (
                   <span key={k} className="inline-flex items-center gap-1.5">

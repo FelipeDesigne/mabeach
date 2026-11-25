@@ -65,10 +65,10 @@ for (const [id, categoryId, name, description, price] of items) {
 }
 
 // Ambientes de teste: Salão (mesas 1 a 3, no mapa) e Varanda (mesas 4 e 5, a 5 fora do mapa).
-await db.doc('areas/salao').set({ name: 'Salão', order: 10, floor: 'cimento', walls: [
+await db.doc('areas/salao').set({ name: 'Salão', order: 10, fills: [{ x: 300, y: 300, floor: 'cimento' }, { x: 800, y: 150, floor: 'porcelanato' }], walls: [
   { x1: 40, y1: 40, x2: 960, y2: 40 }, { x1: 960, y1: 40, x2: 960, y2: 560 },
-  { x1: 960, y1: 560, x2: 40, y2: 560 }, { x1: 40, y1: 560, x2: 40, y2: 40 },
-  { x1: 600, y1: 40, x2: 600, y2: 300 },
+  { x1: 960, y1: 560, x2: 40, y2: 560, openings: [{ kind: 'door', t: 0.5, w: 60, flip: 1 }] }, { x1: 40, y1: 560, x2: 40, y2: 40, openings: [{ kind: 'window', t: 0.5, w: 120 }] },
+  { x1: 600, y1: 40, x2: 600, y2: 300 }, { x1: 600, y1: 300, x2: 960, y2: 300, openings: [{ kind: 'door', t: 0.3, w: 50 }] },
 ], ...stamp })
 await db.doc('areas/varanda').set({ name: 'Varanda', order: 20, floor: 'deck', walls: [{ x1: 40, y1: 520, x2: 960, y2: 520 }], ...stamp })
 const pos = { 1: [200, 200, 'round'], 2: [380, 200, 'square'], 3: [300, 420, 'round'], 4: [300, 300, 'round'] }

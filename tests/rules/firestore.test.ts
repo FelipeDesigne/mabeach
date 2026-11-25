@@ -267,6 +267,9 @@ describe('ambientes, mapa e balcão', () => {
     await assertFails(setDoc(doc(db.manager(), 'areas/y'), area('manager1', { hacker: 1 })))
     await assertSucceeds(setDoc(doc(db.manager(), 'areas/deck'), area('manager1', { floor: 'deck' })))
     await assertFails(setDoc(doc(db.manager(), 'areas/z'), area('manager1', { floor: 'lava' })))
+    await assertSucceeds(setDoc(doc(db.manager(), 'areas/pintado'), area('manager1', { fills: [{ x: 100, y: 100, floor: 'areia' }] })))
+    await assertFails(setDoc(doc(db.manager(), 'areas/w'), area('manager1', { fills: 'tudo' })))
+    await assertFails(setDoc(doc(db.manager(), 'areas/v'), area('manager1', { fills: Array.from({ length: 61 }, () => ({ x: 1, y: 1, floor: 'areia' })) })))
   })
 
   it('mesa com ambiente e posição no mapa', async () => {
