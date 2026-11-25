@@ -15,7 +15,7 @@ export function initPwa() {
     onNeedRefresh() {
       updateReady = true
       listeners.forEach((l) => l())
-      const isStaffPage = /^\/(garcom|admin|entrar)/.test(location.pathname)
+      const isStaffPage = /^\/(garcom|admin|balcao|conta|equipe|entrar)/.test(location.pathname)
       if (!isStaffPage) {
         document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && applyUpdate?.(false), { once: true })
       }

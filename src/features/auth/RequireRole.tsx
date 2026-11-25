@@ -16,6 +16,8 @@ export function RequireRole({ roles, children }: { roles: Role[]; children: Reac
 
   if (loading) return <Spinner />
   if (!user) return <Navigate to={`/entrar?voltar=${encodeURIComponent(location.pathname)}`} replace />
+  // Garçom ou balcão numa tela que não é a sua: vai direto para a tela certa.
+  if (role && !roles.includes(role) && !canManage(role)) return <Navigate to={homeFor(role)} replace />
   if (!role || !roles.includes(role)) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-sm flex-col items-center justify-center gap-4 px-4 text-center">
@@ -60,4 +62,18 @@ export function RequireRole({ roles, children }: { roles: Role[]; children: Reac
     )
   }
   return <>{children}</>
+}
+
+/**
+ * /equipe: por onde o app instalado abre. Leva cada um para a sua tela (garçom nos chamados,
+ * balcão no mapa, ADM e gerente no painel) ou para o login, se ninguém entrou ainda.
+ */
+export function StaffHome() {
+  const { user, role, loading } = useAuth()
+  useEffect(() => {
+    enableStaffManifest()
+  }, [])
+  if (loading) return <Spinner />
+  if (!user) return <Navigate to="/entrar" replace />
+  return <Navigate to={homeFor(role)} replace />
 }

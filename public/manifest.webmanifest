@@ -4,7 +4,7 @@
   "short_name": "MA Beach",
   "description": "Chamados das mesas e painel do MA Beach.",
   "lang": "pt-BR",
-  "start_url": "/garcom",
+  "start_url": "/equipe",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

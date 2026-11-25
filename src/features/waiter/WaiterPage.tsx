@@ -12,6 +12,7 @@ import { canManage, useAuth } from '../auth/AuthProvider'
 import { pushDeviceId, pushState } from '../../lib/push'
 import { readPref, useKeepAwake } from '../../lib/devicePrefs'
 import { UpdateBanner } from '../pwa/UpdateBanner'
+import { InstallCard } from './InstallCard'
 import type { Call, TableStatus } from '../../types'
 
 export function WaiterPage() {
@@ -123,6 +124,7 @@ export function WaiterPage() {
 
       <main className="mx-auto flex max-w-xl flex-col gap-4 px-4 pt-4">
         <UpdateBanner />
+        <InstallCard />
         <section className="flex flex-col gap-3 rounded-2xl bg-white p-4 ring-1 ring-line">
           <div className="flex items-center justify-between gap-4">
             <div>

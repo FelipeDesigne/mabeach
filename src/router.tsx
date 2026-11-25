@@ -1,7 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, Outlet } from 'react-router'
 import { AuthProvider } from './features/auth/AuthProvider'
-import { RequireRole } from './features/auth/RequireRole'
+import { RequireRole, StaffHome } from './features/auth/RequireRole'
 import { StaffGate } from './features/auth/StaffGate'
 import { NotFound } from './features/NotFound'
 import { MenuPage } from './features/menu/MenuPage'
@@ -56,6 +56,7 @@ export const router = createBrowserRouter([
         ),
         children: [
           { path: '/entrar', element: <L><LoginPage /></L> },
+          { path: '/equipe', element: <StaffHome /> },
           {
             path: '/garcom',
             element: (
