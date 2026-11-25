@@ -15,9 +15,8 @@ import { ROLE_LABEL, servesTables, type Area, type Role, type Staff } from '../.
 const ROLE_HINT: Record<Role, string> = {
   admin: 'Tudo: cardápio, mesas, equipe, configurações e histórico.',
   manager: 'Cardápio, mesas, histórico e chamados. Não mexe na equipe nem nas configurações.',
-  waiter: 'Chamados das mesas e pedidos para a cozinha.',
-  counter: 'Só a tela do balcão: mapa ao vivo das mesas, pedidos de cada mesa e encerrar mesas. Não recebe chamados.',
-  kitchen: 'Só a tela da cozinha: recebe e imprime os pedidos e avisa o garçom quando fica pronto.',
+  waiter: 'Recebe os chamados das mesas.',
+  counter: 'Só a tela do balcão: mapa ao vivo das mesas e encerrar mesas. Não recebe chamados.',
 }
 
 /** Envia (ou tira) a foto da pessoa. Só o ADM pode. */
@@ -123,7 +122,6 @@ function RoleSelect({ value, onChange, disabled }: { value: Role; onChange: (r: 
           <option value="waiter">Garçom</option>
           <option value="manager">Gerente</option>
           <option value="counter">Balcão</option>
-          <option value="kitchen">Cozinha</option>
           <option value="admin">ADM</option>
         </Select>
       )}

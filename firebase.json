@@ -20,7 +20,7 @@
         ]
       },
       {
-        "source": "/{admin,garcom,balcao,cozinha,entrar,conta,acesso}{,/**}",
+        "source": "/{admin,garcom,balcao,entrar,conta,acesso}{,/**}",
         "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
       },
       {

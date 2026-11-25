@@ -1,9 +1,9 @@
 import type { Timestamp } from 'firebase/firestore'
 
-export type Role = 'admin' | 'manager' | 'waiter' | 'counter' | 'kitchen'
-export const ROLE_LABEL: Record<Role, string> = { admin: 'ADM', manager: 'Gerente', waiter: 'Garçom', counter: 'Balcão', kitchen: 'Cozinha' }
-/** Quem atende mesas (recebe chamados, tem ambientes e foto para o cliente). Balcão e Cozinha não. */
-export const servesTables = (role: Role) => role !== 'counter' && role !== 'kitchen'
+export type Role = 'admin' | 'manager' | 'waiter' | 'counter'
+export const ROLE_LABEL: Record<Role, string> = { admin: 'ADM', manager: 'Gerente', waiter: 'Garçom', counter: 'Balcão' }
+/** Quem atende mesas (recebe chamados, tem ambientes e foto para o cliente). O balcão não. */
+export const servesTables = (role: Role) => role !== 'counter'
 
 export type Category = { id: string; name: string; order: number; visible: boolean }
 
@@ -70,8 +70,6 @@ export type TableStatus = {
   holderUid: string | null
   holderName: string | null
   since?: Timestamp | null
-  /** Visita atual da mesa (os pedidos ficam ligados a ela). */
-  sessionId?: string | null
 }
 
 export type CallStatus = 'open' | 'attended' | 'expired' | 'closed'
@@ -94,32 +92,6 @@ export type Call = {
   attendedAt?: Timestamp
   responseSec?: number
 }
-
-/** Comanda: pedido anotado pelo garçom na mesa (escrito só pelo servidor; preço vem do cardápio). */
-export type OrderLine = { itemId: string; name: string; qty: number; unitPrice: number; note: string }
-export type OrderStatus = 'new' | 'ready' | 'delivered' | 'canceled'
-export type Order = {
-  id: string
-  /** Número do pedido no dia (1, 2, 3...). */
-  number: number
-  date: string
-  tableId: string
-  tableLabel: string
-  areaId: string | null
-  sessionId: string | null
-  waiterUid: string
-  waiterName: string
-  lines: OrderLine[]
-  note: string
-  total: number
-  status: OrderStatus
-  createdAt: Timestamp
-  readyAt?: Timestamp | null
-  deliveredAt?: Timestamp | null
-  canceledAt?: Timestamp | null
-}
-/** Preço que vale agora: o de promoção, quando tem. */
-export const currentPrice = (i: { price: number; promoPrice?: number | null }) => (i.promoPrice != null ? i.promoPrice : i.price)
 
 export type Staff = {
   id: string

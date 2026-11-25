@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { collection, doc, orderBy, query, serverTimestamp, Timestamp, updateDoc, where } from 'firebase/firestore'
-import { BellRing, Check, ClipboardPen, Coffee, LayoutDashboard, LogOut, UserRound } from 'lucide-react'
+import { BellRing, Check, Coffee, LayoutDashboard, LogOut, UserRound } from 'lucide-react'
 import { callFn, db, errorMessage } from '../../lib/firebase'
 import { beep } from '../../lib/beep'
-import { MyOrders } from '../orders/MyOrders'
 import { duration, tableName, timeOf } from '../../lib/format'
 import { useLiveQuery, useNow } from '../../lib/data'
 import { Badge, Button, Notice, Spinner, Switch } from '../../components/ui'
@@ -150,16 +149,7 @@ export function WaiterPage() {
             ))}
         </section>
 
-        <Link
-          to="/garcom/pedido"
-          className="flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-navy px-4 text-lg font-bold text-beige active:bg-navy-soft"
-        >
-          <ClipboardPen className="size-6" aria-hidden /> Novo pedido
-        </Link>
-
         {error && <Notice tone="danger">{error}</Notice>}
-
-        <MyOrders uid={uid} now={now} />
 
         <section>
           <h2 className="mb-2 text-lg font-bold">Mesas chamando</h2>
@@ -214,17 +204,9 @@ export function WaiterPage() {
                       <p className="font-bold">{tableName(t.tableLabel)}</p>
                       {t.since && <p className="text-xs text-muted">desde {timeOf(t.since.toDate())}</p>}
                     </div>
-                    <div className="flex gap-2">
-                      <Link
-                        to={`/garcom/pedido?mesa=${t.id}`}
-                        className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-navy px-4 text-sm font-semibold text-beige"
-                      >
-                        <ClipboardPen className="size-4" aria-hidden /> Pedido
-                      </Link>
-                      <Button variant="secondary" busy={closingId === t.id} onClick={() => closeTable(t)}>
-                        Encerrar
-                      </Button>
-                    </div>
+                    <Button variant="secondary" busy={closingId === t.id} onClick={() => closeTable(t)}>
+                      Encerrar
+                    </Button>
                   </li>
                 ))}
             </ul>

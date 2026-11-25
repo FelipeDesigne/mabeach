@@ -16,7 +16,7 @@ type AuthState = {
 }
 
 const Ctx = createContext<AuthState | null>(null)
-const ROLES: Role[] = ['admin', 'manager', 'waiter', 'counter', 'kitchen']
+const ROLES: Role[] = ['admin', 'manager', 'waiter', 'counter']
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -80,4 +80,4 @@ export const canManage = (role: Role | null) => role === 'admin' || role === 'ma
 
 /** Tela inicial de cada função. */
 export const homeFor = (role: Role | null) =>
-  role === 'counter' ? '/balcao' : role === 'kitchen' ? '/cozinha' : canManage(role) ? '/admin' : '/garcom'
+  role === 'counter' ? '/balcao' : canManage(role) ? '/admin' : '/garcom'

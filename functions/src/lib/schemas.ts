@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 const id = z.string().regex(/^[A-Za-z0-9]{10,40}$/)
 const name = z.string().trim().min(2).max(60)
-const role = z.enum(['admin', 'manager', 'waiter', 'counter', 'kitchen'])
+const role = z.enum(['admin', 'manager', 'waiter', 'counter'])
 const password = z.string().min(8).max(100)
 /** "joao", "maria.silva" ou um e-mail. */
 const login = z
@@ -15,13 +15,6 @@ const login = z
 export const callWaiterSchema = z.object({ tableId: id }).strict()
 export const attendCallSchema = z.object({ callId: id }).strict()
 export const closeTableSchema = z.object({ tableId: id }).strict()
-
-// Pedido feito pelo garçom na mesa: só identificadores e quantidades. Nome e preço o servidor lê do cardápio.
-const orderLine = z
-  .object({ itemId: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/), qty: z.number().int().min(1).max(50), note: z.string().trim().max(140).optional() })
-  .strict()
-export const createOrderSchema = z.object({ tableId: id, lines: z.array(orderLine).min(1).max(60), note: z.string().trim().max(200).optional() }).strict()
-export const orderStatusSchema = z.object({ orderId: id, status: z.enum(['ready', 'delivered', 'canceled']) }).strict()
 
 export const createUserSchema = z.object({ name, login, password, role }).strict()
 export const updateUserSchema = z

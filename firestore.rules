@@ -1,7 +1,7 @@
 rules_version = '2';
 
 // Tudo é negado por padrão; cada coleção é liberada explicitamente.
-// Funções da equipe (claim `role`, gravada só pelo servidor): admin (ADM), manager (Gerente), waiter (Garçom), counter (Balcão), kitchen (Cozinha).
+// Funções da equipe (claim `role`, gravada só pelo servidor): admin (ADM), manager (Gerente), waiter (Garçom), counter (Balcão).
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -20,9 +20,7 @@ service cloud.firestore {
     function isStaff() { return signedIn() && role() in ['admin', 'manager', 'waiter'] && sessionCurrent(); }
     // Balcão: vê o mapa ao vivo e encerra mesas (pelo servidor). Não atende chamados.
     function isCounter() { return signedIn() && role() == 'counter' && sessionCurrent(); }
-    // Cozinha: recebe os pedidos e marca "Pronto" (pelo servidor). Não atende mesas.
-    function isKitchen() { return signedIn() && role() == 'kitchen' && sessionCurrent(); }
-    function isTeam() { return isStaff() || isCounter() || isKitchen(); }
+    function isTeam() { return isStaff() || isCounter(); }
     function num(v, min, max) { return (v is int || v is float) && v >= min && v <= max; }
     function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
 
@@ -112,7 +110,7 @@ service cloud.firestore {
     // ---------- Mesas ----------
     // O código da mesa (id do documento, aleatório) vai no QR: o cliente abre só a mesa do QR, sem listar as outras.
     match /tables/{id} {
-      // A equipe lista as mesas (o garçom escolhe a mesa do pedido; o balcão vê o mapa).
+      // A equipe lista as mesas (o balcão vê o mapa).
       allow get: if (resource.data.active == true) || isTeam();
       allow list: if isTeam();
       allow delete: if isManager();
@@ -156,13 +154,6 @@ service cloud.firestore {
     // Criados e atendidos só pelo servidor (Cloud Functions). A equipe acompanha em tempo real.
     match /calls/{id} {
       allow read: if isStaff();
-      allow write: if false;
-    }
-
-    // ---------- Pedidos (comanda) ----------
-    // Criados e atualizados só pelo servidor (preço vem do cardápio). Equipe, balcão e cozinha acompanham.
-    match /orders/{id} {
-      allow read: if isTeam();
       allow write: if false;
     }
 

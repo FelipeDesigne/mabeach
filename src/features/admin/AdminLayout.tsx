@@ -1,5 +1,5 @@
 import { NavLink, Outlet, Link } from 'react-router'
-import { BellRing, ChartColumn, ChefHat, History, LogOut, Map, Monitor, QrCode, Settings, Sparkles, UserRound, UtensilsCrossed, Users } from 'lucide-react'
+import { BellRing, ChartColumn, History, LogOut, Map, Monitor, QrCode, Settings, Sparkles, UserRound, UtensilsCrossed, Users } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import { ROLE_LABEL } from '../../types'
 import { UpdateBanner } from '../pwa/UpdateBanner'
@@ -43,10 +43,6 @@ export function AdminLayout() {
           <Link to="/balcao" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold whitespace-nowrap hover:bg-beige-200">
             <Monitor className="size-4" aria-hidden />
             Balcão (mapa ao vivo)
-          </Link>
-          <Link to="/cozinha" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold whitespace-nowrap hover:bg-beige-200">
-            <ChefHat className="size-4" aria-hidden />
-            Cozinha
           </Link>
           <Link to="/garcom" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold whitespace-nowrap hover:bg-beige-200">
             <BellRing className="size-4" aria-hidden />

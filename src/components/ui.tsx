@@ -1,9 +1,8 @@
 import { useEffect, useId, useRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import { LoaderCircle, X } from 'lucide-react'
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'solidDanger' | 'success'
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'solidDanger'
 const VARIANT: Record<Variant, string> = {
-  success: 'bg-success text-white hover:bg-success/90 disabled:bg-success/40',
   primary: 'bg-navy text-beige hover:bg-navy-soft disabled:bg-navy/40',
   secondary: 'bg-white text-navy ring-1 ring-line hover:bg-beige-200 disabled:text-navy/40',
   ghost: 'text-navy hover:bg-beige-200 disabled:text-navy/40',

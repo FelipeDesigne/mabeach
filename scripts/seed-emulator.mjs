@@ -7,7 +7,6 @@
  *   joao  / teste1234  (Garçom)
  *   maria / teste1234  (Garçom)
  *   balcao / teste1234 (Balcão)
- *   cozinha / teste1234 (Cozinha)
  */
 import { createRequire } from 'node:module'
 
@@ -38,7 +37,6 @@ const admin = await user('admin', 'Marco', 'admin')
 await user('joao', 'João', 'waiter', true, ['salao'])
 await user('maria', 'Maria', 'waiter', true, ['varanda'])
 await user('balcao', 'Balcão', 'counter')
-await user('cozinha', 'Cozinha', 'kitchen')
 
 const stamp = { updatedAt: FieldValue.serverTimestamp(), updatedBy: admin }
 const cats = [

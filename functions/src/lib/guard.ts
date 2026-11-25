@@ -5,8 +5,8 @@ import { createHash } from 'node:crypto'
 import type { z } from 'zod'
 import { adminAuth, db } from './firebase'
 
-export type Role = 'admin' | 'manager' | 'waiter' | 'counter' | 'kitchen'
-export const ROLES: Role[] = ['admin', 'manager', 'waiter', 'counter', 'kitchen']
+export type Role = 'admin' | 'manager' | 'waiter' | 'counter'
+export const ROLES: Role[] = ['admin', 'manager', 'waiter', 'counter']
 
 export function requireUser(req: CallableRequest<unknown>) {
   if (!req.auth?.uid) throw new HttpsError('unauthenticated', 'Entre na sua conta para continuar.')

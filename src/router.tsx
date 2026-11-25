@@ -21,8 +21,6 @@ const QrPrintPage = lazy(() => import('./features/admin/QrPrintPage').then((m) =
 const TeamAdmin = lazy(() => import('./features/admin/TeamAdmin').then((m) => ({ default: m.TeamAdmin })))
 const CallsAdmin = lazy(() => import('./features/admin/CallsAdmin').then((m) => ({ default: m.CallsAdmin })))
 const AreasAdmin = lazy(() => import('./features/admin/AreasAdmin').then((m) => ({ default: m.AreasAdmin })))
-const OrderPage = lazy(() => import('./features/orders/OrderPage').then((m) => ({ default: m.OrderPage })))
-const KitchenPage = lazy(() => import('./features/kitchen/KitchenPage').then((m) => ({ default: m.KitchenPage })))
 const CounterPage = lazy(() => import('./features/counter/CounterPage').then((m) => ({ default: m.CounterPage })))
 const ReportsAdmin = lazy(() => import('./features/admin/ReportsAdmin').then((m) => ({ default: m.ReportsAdmin })))
 const SettingsAdmin = lazy(() => import('./features/admin/SettingsAdmin').then((m) => ({ default: m.SettingsAdmin })))
@@ -75,25 +73,9 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: '/garcom/pedido',
-            element: (
-              <RequireRole roles={['admin', 'manager', 'waiter']}>
-                <L><OrderPage /></L>
-              </RequireRole>
-            ),
-          },
-          {
-            path: '/cozinha',
-            element: (
-              <RequireRole roles={['admin', 'manager', 'kitchen']}>
-                <L><KitchenPage /></L>
-              </RequireRole>
-            ),
-          },
-          {
             path: '/conta',
             element: (
-              <RequireRole roles={['admin', 'manager', 'waiter', 'counter', 'kitchen']}>
+              <RequireRole roles={['admin', 'manager', 'waiter', 'counter']}>
                 <L><AccountPage /></L>
               </RequireRole>
             ),

@@ -18,7 +18,7 @@ export function LoginPage() {
 
   if (!loading && user && role) {
     const back = params.get('voltar')
-    const safeBack = back && /^\/(garcom|admin|balcao|cozinha|conta)(\/|$)/.test(back) ? back : null
+    const safeBack = back && /^\/(garcom|admin|balcao|conta)(\/|$)/.test(back) ? back : null
     return <Navigate to={safeBack ?? homeFor(role)} replace />
   }
 

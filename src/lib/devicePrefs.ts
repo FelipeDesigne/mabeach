@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 
 /** Preferências deste celular (não vão para o servidor): som com o app aberto e tela sempre acesa. */
-export type DevicePref = 'sound' | 'keepAwake' | 'autoPrint'
-/** autoPrint: a tela da cozinha imprime cada pedido novo sozinha. */
-const DEFAULTS: Record<DevicePref, boolean> = { sound: true, keepAwake: false, autoPrint: true }
+export type DevicePref = 'sound' | 'keepAwake'
+const DEFAULTS: Record<DevicePref, boolean> = { sound: true, keepAwake: false }
 const key = (p: DevicePref) => `mabeach-pref:${p}`
 
 export function readPref(p: DevicePref) {

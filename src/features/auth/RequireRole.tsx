@@ -31,7 +31,7 @@ export function RequireRole({ roles, children }: { roles: Role[]; children: Reac
         <div className="flex flex-wrap justify-center gap-2">
           {role && !canManage(role) && (
             <Link to={homeFor(role)} className="inline-flex min-h-11 items-center rounded-xl bg-navy px-4 text-sm font-semibold text-beige">
-              {role === 'counter' ? 'Abrir o balcão' : role === 'kitchen' ? 'Abrir a cozinha' : 'Abrir chamados'}
+              {role === 'counter' ? 'Abrir o balcão' : 'Abrir chamados'}
             </Link>
           )}
           <Button variant={role && !canManage(role) ? 'secondary' : 'primary'} onClick={signOut}>

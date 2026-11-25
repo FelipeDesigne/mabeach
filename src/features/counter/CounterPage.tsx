@@ -9,7 +9,6 @@ import { Button, Modal, Notice, Spinner } from '../../components/ui'
 import { canManage, useAuth } from '../auth/AuthProvider'
 import { UpdateBanner } from '../pwa/UpdateBanner'
 import { FloorMap, TONE, type MapTable } from '../map/FloorMap'
-import { TableOrders } from '../orders/TableOrders'
 import type { Area, Table, TableStatus } from '../../types'
 
 const byOrder = (a: Area, b: Area) => a.order - b.order || a.name.localeCompare(b.name, 'pt-BR')
@@ -198,7 +197,6 @@ export function CounterPage() {
                 </>
               )}
             </p>
-            {sel.sessionId && <TableOrders sessionId={sel.sessionId} />}
             {selTable && !selTable.areaId && <p className="text-xs text-muted">Esta mesa não está em nenhum ambiente do mapa.</p>}
             {error && <Notice tone="danger">{error}</Notice>}
             <p className="text-xs text-muted">Encerre quando o cliente for embora: a mesa volta a ficar livre e o próximo chamado segue o rodízio normal.</p>

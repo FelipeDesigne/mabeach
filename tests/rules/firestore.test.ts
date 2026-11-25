@@ -14,7 +14,8 @@ const db = {
   manager: () => env.authenticatedContext('manager1', staffToken('manager')).firestore(),
   admin: () => env.authenticatedContext('admin1', staffToken('admin')).firestore(),
   counter: () => env.authenticatedContext('counter1', { role: 'counter', iat: Math.floor(Date.now() / 1000) }).firestore(),
-  kitchen: () => env.authenticatedContext('kitchen1', { role: 'kitchen', iat: Math.floor(Date.now() / 1000) }).firestore(),
+  /** Função que não existe mais (a antiga Cozinha): não pode ler nada da equipe. */
+  oldRole: () => env.authenticatedContext('old1', { role: 'kitchen', iat: Math.floor(Date.now() / 1000) }).firestore(),
 }
 
 const item = (uid: string, extra: Record<string, unknown> = {}) => ({
@@ -49,8 +50,6 @@ beforeEach(async () => {
     await setDoc(doc(f, 'tables/AbCdEf123456789xyz'), { label: '12', number: 12, active: true })
     await setDoc(doc(f, 'tables/Inativa1234567890xx'), { label: '13', number: 13, active: false })
     await setDoc(doc(f, 'calls/call1'), { tableId: 'AbCdEf123456789xyz', status: 'open' })
-    await setDoc(doc(f, 'orders/ord1'), { tableId: 'AbCdEf123456789xyz', status: 'new', total: 3290, waiterUid: 'waiter1' })
-    await setDoc(doc(f, 'staff/kitchen1'), { name: 'Cozinha', role: 'kitchen', active: true, onDuty: false })
     await setDoc(doc(f, 'staff/waiter1'), { name: 'João', role: 'waiter', active: true, onDuty: false })
     await setDoc(doc(f, 'staff/waiter2'), { name: 'Maria', role: 'waiter', active: true, onDuty: false })
     await setDoc(doc(f, 'settings/public'), { callCooldownMin: 5 })
@@ -122,28 +121,14 @@ describe('destaques', () => {
   })
 })
 
-describe('pedidos (comanda)', () => {
-  it('equipe, balcão e cozinha leem; cliente e conta sem função não', async () => {
-    await assertSucceeds(getDoc(doc(db.waiter(), 'orders/ord1')))
-    await assertSucceeds(getDoc(doc(db.counter(), 'orders/ord1')))
-    await assertSucceeds(getDoc(doc(db.kitchen(), 'orders/ord1')))
-    await assertSucceeds(getDocs(collection(db.kitchen(), 'orders')))
-    await assertFails(getDoc(doc(db.anon(), 'orders/ord1')))
-    await assertFails(getDoc(doc(db.noRole(), 'orders/ord1')))
-  })
-
-  it('ninguém grava pedido direto pelo app (preço vem do servidor)', async () => {
-    const o = { tableId: 'AbCdEf123456789xyz', lines: [{ itemId: 'visivel', qty: 1, unitPrice: 1 }], total: 1, status: 'new' }
-    await assertFails(setDoc(doc(db.waiter(), 'orders/novo'), o))
-    await assertFails(setDoc(doc(db.admin(), 'orders/novo'), o))
-    await assertFails(updateDoc(doc(db.kitchen(), 'orders/ord1'), { status: 'ready' }))
-    await assertFails(updateDoc(doc(db.waiter(), 'orders/ord1'), { total: 0 }))
-  })
-
-  it('cozinha não mexe no cardápio, nas mesas nem nos chamados', async () => {
-    await assertFails(getDoc(doc(db.kitchen(), 'calls/call1')))
-    await assertFails(setDoc(doc(db.kitchen(), 'items/novo'), item('kitchen1')))
-    await assertFails(updateDoc(doc(db.kitchen(), 'staff/kitchen1'), { onDuty: true, onDutyAt: serverTimestamp() }))
+describe('função antiga (Cozinha, removida)', () => {
+  it('não lê mesas, mapa, chamados nem pedidos, e não mexe no cardápio', async () => {
+    await assertFails(getDocs(collection(db.oldRole(), 'tables')))
+    await assertFails(getDocs(collection(db.oldRole(), 'tableStatus')))
+    await assertFails(getDocs(collection(db.oldRole(), 'areas')))
+    await assertFails(getDoc(doc(db.oldRole(), 'calls/call1')))
+    await assertFails(getDocs(collection(db.oldRole(), 'orders')))
+    await assertFails(setDoc(doc(db.oldRole(), 'items/novo'), item('old1')))
   })
 })
 
