@@ -87,8 +87,8 @@ export function MenuPage() {
 
   return (
     <div className={`min-h-dvh ${tableId ? 'pb-32' : 'pb-10'}`}>
-      <header className="bg-beige px-4 pt-8 pb-4 text-center">
-        <img src="/logo.svg" alt="MA Beach" className="mx-auto w-44 sm:w-52" width={2782} height={1908} />
+      <header className="bg-beige px-4 pt-6 pb-4 text-center">
+        <img src="/logo.svg" alt="MA Beach" className="mx-auto w-32 sm:w-40" width={2782} height={1908} />
         {hasTable && (
           <p className="mt-4 inline-flex rounded-full bg-navy px-4 py-1.5 text-sm font-semibold text-beige">{tableName(table.label)}</p>
         )}

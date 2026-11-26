@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BellRing, Check, Star } from 'lucide-react'
 import { callFn, errorMessage } from '../../lib/firebase'
 import { countdown, tableName } from '../../lib/format'
@@ -40,6 +40,22 @@ function saveReviewAnswer(done: boolean) {
   }
 }
 
+/**
+ * Entrada do botão: na primeira visita da mesa (nesta aba), ele aparece no meio da tela quando a pessoa
+ * rola uns 50 px (ou depois de 4 s, se ela não rolar) e desce até o rodapé. Assim ninguém deixa de ver.
+ */
+const INTRO_KEY = (tableId: string) => `mabeach-intro:${tableId}`
+const INTRO_SCROLL = 50
+const INTRO_FALLBACK_MS = 4000
+function introSeen(tableId: string) {
+  try {
+    return sessionStorage.getItem(INTRO_KEY(tableId)) === '1'
+  } catch {
+    return false
+  }
+}
+const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
 /** Barra fixa no rodapé do cardápio: "Chamar garçom", bloqueado depois de chamar até passar o prazo. */
 export function CallBar({ table, cooldownMin, reviewUrl }: { table: Table | null; cooldownMin: number; reviewUrl?: string }) {
   const now = useNow(1000)
@@ -52,10 +68,57 @@ export function CallBar({ table, cooldownMin, reviewUrl }: { table: Table | null
   const [arrived, setArrived] = useState(false)
   const [waiter, setWaiter] = useState<Waiter | null>(null)
   const [askReview, setAskReview] = useState(false)
+  /** waiting: ainda escondido; intro: animando do meio da tela; done: parado no rodapé. */
+  const [stage, setStage] = useState<'waiting' | 'intro' | 'done'>(() =>
+    !table || readLock(table.id) > Date.now() || introSeen(table.id) || reducedMotion() ? 'done' : 'waiting',
+  )
+  const btnRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (table) setRetryAt(readLock(table.id))
   }, [table])
+
+  // Espera a pessoa rolar um pouco (ou o tempo acabar) para mostrar o botão.
+  useEffect(() => {
+    if (stage !== 'waiting') return
+    const start = () => setStage('intro')
+    const onScroll = () => window.scrollY > INTRO_SCROLL && start()
+    const timer = window.setTimeout(start, INTRO_FALLBACK_MS)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('scroll', onScroll)
+    }
+  }, [stage])
+
+  // Aparece no meio da tela, fica um instante e desce suave até o lugar dele no rodapé.
+  useEffect(() => {
+    if (stage !== 'intro' || !table) return
+    try {
+      sessionStorage.setItem(INTRO_KEY(table.id), '1')
+    } catch {
+      // sem sessionStorage: a animação pode repetir, sem problema
+    }
+    const el = btnRef.current
+    if (!el?.animate) return setStage('done')
+    const r = el.getBoundingClientRect()
+    const dy = window.innerHeight / 2 - (r.top + r.height / 2)
+    const anim = el.animate(
+      [
+        { transform: `translateY(${dy}px) scale(0.8)`, opacity: 0, easing: 'cubic-bezier(.2,.9,.3,1.3)' },
+        { transform: `translateY(${dy}px) scale(1.06)`, opacity: 1, offset: 0.2, easing: 'ease-out' },
+        { transform: `translateY(${dy}px) scale(1)`, opacity: 1, offset: 0.58, easing: 'cubic-bezier(.45,0,.2,1)' },
+        { transform: 'translateY(0) scale(1)', opacity: 1 },
+      ],
+      { duration: 2300 },
+    )
+    anim.onfinish = () => setStage('done')
+    anim.oncancel = () => setStage('done')
+    return () => {
+      anim.oncancel = null
+      anim.cancel()
+    }
+  }, [stage, table])
 
   if (!table) {
     return (
@@ -102,8 +165,12 @@ export function CallBar({ table, cooldownMin, reviewUrl }: { table: Table | null
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-beige/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
-        <div className="mx-auto max-w-2xl">
+      <div
+        className={`fixed inset-x-0 bottom-0 z-20 border-t px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-[background-color,border-color] duration-500 ${
+          stage === 'done' ? 'border-line bg-beige/95 backdrop-blur' : 'pointer-events-none border-transparent bg-transparent'
+        } ${stage === 'waiting' ? 'invisible' : ''}`}
+      >
+        <div ref={btnRef} className="pointer-events-auto mx-auto max-w-2xl">
           {locked ? (
             <div className="flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-white px-4 text-center ring-1 ring-line" role="status" aria-live="polite">
               {waiter?.photoUrl ? (
@@ -117,10 +184,16 @@ export function CallBar({ table, cooldownMin, reviewUrl }: { table: Table | null
               </p>
             </div>
           ) : (
-            <Button onClick={() => setConfirm(true)} className="min-h-14 w-full rounded-2xl text-base">
+            <button
+              type="button"
+              onClick={() => setConfirm(true)}
+              className={`inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-call px-4 text-base font-bold text-white transition-colors hover:bg-call/90 active:bg-call/80 ${
+                stage === 'intro' ? 'shadow-2xl shadow-call/40' : 'shadow-lg shadow-call/25'
+              }`}
+            >
               <BellRing className="size-5" aria-hidden />
               Chamar garçom
-            </Button>
+            </button>
           )}
         </div>
       </div>
